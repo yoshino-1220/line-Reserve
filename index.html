@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ご予約</title>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root{
+  --ink:#1F1D1A;
+  --ink-soft:#6E685E;
+  --line:#E4E0D8;
+  --bg:#FFFFFF;
+  --green:#2C4A3B;
+  --green-tint:#EDF2EE;
+  --gold:#9A7B24;
+  --danger:#A32A20;
+  --radius:10px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;
+  font-size:15px;
+  line-height:1.6;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom));
+}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
+/* --- ヘッダー --- */
+header{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--line);
+}
+.shop{font-size:17px;font-weight:700;letter-spacing:.02em}
+.shop span{display:block;font-size:12px;font-weight:400;color:var(--ink-soft);letter-spacing:.08em}
+.link{font-size:13px;color:var(--green);text-decoration:underline;text-underline-offset:3px}
+
+section{padding:22px 20px 4px}
+h2{margin:0 0 12px;font-size:13px;font-weight:700;color:var(--ink-soft);letter-spacing:.04em}
+
+/* --- 日付 --- */
+.dates{display:flex;gap:8px;overflow-x:auto;padding:2px 20px 6px;margin:0 -20px;scrollbar-width:none}
+.dates::-webkit-scrollbar{display:none}
+.date{
+  flex:0 0 auto;width:52px;padding:8px 0 9px;text-align:center;
+  border:1px solid var(--line);border-radius:var(--radius);background:#fff;
+}
+.date b{display:block;font-size:19px;font-weight:700;line-height:1.2}
+.date i{display:block;font-size:11px;font-style:normal;color:var(--ink-soft);margin-top:1px}
+.date[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.date[aria-pressed="true"] i{color:#CFDCD4}
+.date[disabled]{color:#C3BEB4;background:#FAF9F7}
+.date[disabled] i{color:#C3BEB4}
+.date.sun b{color:var(--danger)}
+.date.sat b{color:#2A5B86}
+.date[aria-pressed="true"] b{color:#fff}
+
+/* --- 時間 --- */
+.period{margin-bottom:18px}
+.period-name{
+  display:flex;align-items:center;gap:10px;
+  font-size:12px;color:var(--gold);font-weight:700;margin-bottom:8px;
+}
+.period-name::after{content:"";flex:1;height:1px;background:var(--line)}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:9px 4px 8px;text-align:center;background:#fff;
+}
+.slot b{display:block;font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.slot i{display:block;font-size:10.5px;font-style:normal;color:var(--ink-soft);margin-top:2px}
+.slot[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.slot[aria-pressed="true"] i{color:#CFDCD4}
+.slot[disabled]{background:#FAF9F7;color:#C3BEB4;border-style:dashed}
+.slot[disabled] i{color:#C3BEB4}
+
+/* --- 人数 --- */
+.party{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.party button{
+  border:1px solid var(--line);border-radius:var(--radius);padding:10px 0;
+  font-size:16px;font-weight:600;background:#fff;
+}
+.party button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
+
+textarea{
+  width:100%;min-height:64px;padding:10px 12px;font:inherit;
+  border:1px solid var(--line);border-radius:var(--radius);resize:vertical;background:#fff;
+}
+
+/* --- フッター --- */
+.bar{
+  position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);
+  backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+}
+.summary{font-size:12.5px;color:var(--ink-soft);margin-bottom:8px;min-height:20px}
+.submit{
+  width:100%;padding:14px;border-radius:var(--radius);
+  background:var(--green);color:#fff;font-size:16px;font-weight:700;
+}
+.submit[disabled]{background:#D6D2CA;color:#fff}
+
+/* --- 状態表示 --- */
+.note{padding:28px 20px;color:var(--ink-soft);font-size:14px}
+.error{
+  margin:16px 20px;padding:12px 14px;border-radius:var(--radius);
+  background:#FBEDEB;color:var(--danger);font-size:13.5px;
+}
+.hidden{display:none}
+
+/* --- 完了 --- */
+.done{padding:56px 24px;text-align:center}
+.done h1{font-size:20px;margin:0 0 6px;letter-spacing:.04em}
+.done p{color:var(--ink-soft);font-size:14px;margin:0 0 28px}
+.ticket{
+  display:inline-block;text-align:left;border:1px solid var(--green);
+  border-radius:var(--radius);padding:18px 26px;margin-bottom:28px;
+}
+.ticket dt{font-size:11px;color:var(--ink-soft);margin-top:10px}
+.ticket dt:first-child{margin-top:0}
+.ticket dd{margin:1px 0 0;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* --- 予約一覧 --- */
+.item{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:0 20px 10px}
+.item .when{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.item .meta{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.cancel{margin-top:10px;font-size:13px;color:var(--danger);text-decoration:underline;text-underline-offset:3px}
+
+@media (prefers-reduced-motion:no-preference){
+  .slot,.date,.party button{transition:background .12s ease,border-color .12s ease}
+}
+</style>
+</head>
+<body>
+
+<div id="boot" class="note">読み込んでいます…</div>
+
+<div id="app" class="hidden">
+  <header>
+    <div class="shop">ポレポレ polepole<span>ご予約</span></div>
+    <button class="link" id="toMine">予約を確認</button>
+  </header>
+
+  <div id="err" class="error hidden"></div>
+
+  <!-- 予約画面 -->
+  <div id="booking">
+    <section>
+      <h2>ご来店日</h2>
+      <div class="dates" id="dates"></div>
+    </section>
+
+    <section>
+      <h2>ご来店時間</h2>
+      <div id="times"><p class="note" style="padding:0">日付を選んでください。</p></div>
+    </section>
+
+    <section id="partyBox" class="hidden">
+      <h2>人数</h2>
+      <div class="party" id="party"></div>
+    </section>
+
+    <section id="noteBox" class="hidden">
+      <h2>ご要望（任意）</h2>
+      <textarea id="memo" maxlength="200" placeholder="苦手な食材、お席のご希望など"></textarea>
+    </section>
+
+    <div class="bar">
+      <div class="summary" id="summary">日付と時間をお選びください</div>
+      <button class="submit" id="submit" disabled>予約を確定する</button>
+    </div>
+  </div>
+
+  <!-- 完了画面 -->
+  <div id="done" class="hidden">
+    <div class="done">
+      <h1>ご予約を承りました</h1>
+      <p>当日のご来店をお待ちしております。</p>
+      <dl class="ticket" id="ticket"></dl>
+      <div><button class="link" id="toMine2">予約を確認する</button></div>
+    </div>
+  </div>
+
+  <!-- 予約一覧 -->
+  <div id="mine" class="hidden">
+    <section><h2>現在のご予約</h2></section>
+    <div id="mineList"></div>
+    <section><button class="link" id="toBooking">新しく予約する</button></section>
+  </div>
+</div>
+
+<script>
+/* ===== 設定 ===== */
+const LIFF_ID = '2011631327-90fBOe5U';
+const API = 'https://script.google.com/macros/s/AKfycbxqU27o1AV2qF2-EpFwzklxQ1ZkiKorBt9j3DW7xoZvvro27nCJ33eTSmml0X3nDAwACA/exec';
+const CLOSED_WEEKDAYS = [1, 2];   // 0=日 1=月 2=火
+const DAYS_AHEAD = 30;
+
+/* ===== 日付ユーティリティ（JST固定） ===== */
+const fmtYmd = new Intl.DateTimeFormat('en-CA',
+  { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' });
+const fmtWd = new Intl.DateTimeFormat('en-US',
+  { timeZone: 'Asia/Tokyo', weekday: 'short' });
+const WD_NUM = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+const WD_JP = ['日','月','火','水','木','金','土'];
+
+const ymd = d => fmtYmd.format(d);
+const wday = d => WD_NUM[fmtWd.format(d)];
+
+/* ===== 状態 ===== */
+let idToken = null;
+const state = { date:null, start:null, end:null, party:2, slots:null };
+
+/* ===== DOM ===== */
+const $ = id => document.getElementById(id);
+const show = (el, on) => el.classList.toggle('hidden', !on);
+
+function showError(msg) {
+  const e = $('err');
+  e.textContent = msg;
+  show(e, true);
+  window.scrollTo({ top: 0 });
+}
+function clearError() { show($('err'), false); }
+
+/* ===== API ===== */
+async function api(action, extra) {
+  const body = Object.assign({ action, idToken }, extra || {});
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // プリフライト回避
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error('通信に失敗しました（' + res.status + '）');
+  return res.json();
+}
+
+/* ===== 起動 ===== */
+(async function boot() {
+  try {
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) { liff.login(); return; }
+    idToken = liff.getIDToken();
+    if (!idToken) throw new Error('ログイン情報を取得できませんでした。一度アプリを閉じて開き直してください。');
+
+    renderDates();
+    renderParty();
+    show($('boot'), false);
+    show($('app'), true);
+  } catch (e) {
+    $('boot').textContent = e.message || '起動に失敗しました。';
+  }
+})();
+
+/* ===== 日付 ===== */
+function renderDates() {
+  const wrap = $('dates');
+  wrap.innerHTML = '';
+  const base = new Date();
+
+  for (let i = 0; i < DAYS_AHEAD; i++) {
+    const d = new Date(base.getTime() + i * 86400000);
+    const key = ymd(d);
+    const w = wday(d);
+    const closed = CLOSED_WEEKDAYS.indexOf(w) !== -1;
+
+    const b = document.createElement('button');
+    b.className = 'date' + (w === 0 ? ' sun' : w === 6 ? ' sat' : '');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.disabled = closed;
+    b.innerHTML = '<b>' + Number(key.slice(8)) + '</b><i>' +
+      (closed ? '定休' : WD_JP[w]) + '</i>';
+    b.onclick = () => selectDate(key, b);
+    wrap.appendChild(b);
+  }
+}
+
+async function selectDate(key, btn) {
+  clearError();
+  document.querySelectorAll('.date').forEach(el => el.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', 'true');
+
+  state.date = key;
+  state.start = null;
+  state.end = null;
+  $('times').innerHTML = '<p class="note" style="padding:0">空き状況を確認しています…</p>';
+  updateBar();
+
+  try {
+    const r = await api('slots', { date: key });
+    if (!r.ok) throw new Error(r.message || '空き状況を取得できませんでした。');
+    state.slots = r.data;
+    renderTimes(r.data);
+  } catch (e) {
+    $('times').innerHTML = '';
+    showError(e.message);
+  }
+}
+
+/* ===== 時間 ===== */
+function renderTimes(data) {
+  const box = $('times');
+  box.innerHTML = '';
+
+  if (data.closed) {
+    box.innerHTML = '<p class="note" style="padding:0">この日は受付しておりません。</p>';
+    return;
+  }
+
+  const groups = {};
+  data.slots.forEach(s => { (groups[s.period] = groups[s.period] || []).push(s); });
+
+  Object.keys(groups).forEach(name => {
+    const sec = document.createElement('div');
+    sec.className = 'period';
+    sec.innerHTML = '<div class="period-name">' + name + '</div>';
+
+    const grid = document.createElement('div');
+    grid.className = 'slots';
+
+    groups[name].forEach(s => {
+      const b = document.createElement('button');
+      b.className = 'slot';
+      b.type = 'button';
+      b.disabled = !s.available;
+      b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = '<b>' + s.start + '</b><i>' +
+        (s.available ? '残り' + s.remaining + '席' : '満席') + '</i>';
+      b.onclick = () => {
+        document.querySelectorAll('.slot').forEach(el => el.setAttribute('aria-pressed', 'false'));
+        b.setAttribute('aria-pressed', 'true');
+        state.start = s.start;
+        state.end = s.end;
+        show($('partyBox'), true);
+        show($('noteBox'), true);
+        updateBar();
+      };
+      grid.appendChild(b);
+    });
+
+    sec.appendChild(grid);
+    box.appendChild(sec);
+  });
+}
+
+/* ===== 人数 ===== */
+function renderParty() {
+  const wrap = $('party');
+  wrap.innerHTML = '';
+  for (let n = 1; n <= 4; n++) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = n + '名';
+    b.setAttribute('aria-pressed', String(n === state.party));
+    b.onclick = () => {
+      state.party = n;
+      wrap.querySelectorAll('button').forEach((el, i) =>
+        el.setAttribute('aria-pressed', String(i + 1 === n)));
+      updateBar();
+    };
+    wrap.appendChild(b);
+  }
+}
+
+/* ===== フッター ===== */
+function updateBar() {
+  const ready = !!(state.date && state.start);
+  $('submit').disabled = !ready;
+  $('summary').textContent = ready
+    ? state.date.replace(/^\d{4}-/, '').replace('-', '月') + '日 ' +
+      state.start + '〜　' + state.party + '名'
+    : '日付と時間をお選びください';
+}
+
+/* ===== 確定 ===== */
+$('submit').onclick = async () => {
+  clearError();
+  const btn = $('submit');
+  btn.disabled = true;
+  btn.textContent = '送信しています…';
+
+  try {
+    const r = await api('reserve', {
+      date: state.date,
+      start: state.start,
+      party: state.party,
+      note: $('memo').value.trim(),
+    });
+
+    if (!r.ok) {
+      showError(r.message || 'この内容では予約できませんでした。');
+      if (r.reason === 'FULL') selectDate(state.date,
+        document.querySelector('.date[aria-pressed="true"]'));
+      return;
+    }
+
+    $('ticket').innerHTML =
+      '<dt>日時</dt><dd>' + r.date + ' ' + r.start + '</dd>' +
+      '<dt>人数</dt><dd>' + r.party + '名</dd>' +
+      '<dt>受付番号</dt><dd>' + r.id + '</dd>';
+    show($('booking'), false);
+    show($('done'), true);
+    window.scrollTo({ top: 0 });
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    btn.textContent = '予約を確定する';
+    btn.disabled = false;
+  }
+};
+
+/* ===== 予約一覧 ===== */
+async function openMine() {
+  clearError();
+  show($('booking'), false);
+  show($('done'), false);
+  show($('mine'), true);
+  $('mineList').innerHTML = '<p class="note">読み込んでいます…</p>';
+
+  try {
+    const r = await api('mine');
+    if (!r.ok) throw new Error('予約を取得できませんでした。');
+    if (r.data.length === 0) {
+      $('mineList').innerHTML = '<p class="note">現在ご予約はありません。</p>';
+      return;
+    }
+    $('mineList').innerHTML = '';
+    r.data.forEach(x => {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML =
+        '<div class="when">' + x.date + ' ' + x.start + '</div>' +
+        '<div class="meta">' + x.party + '名　受付番号 ' + x.id + '</div>';
+      const c = document.createElement('button');
+      c.className = 'cancel';
+      c.textContent = 'この予約をキャンセルする';
+      c.onclick = async () => {
+        if (!confirm(x.date + ' ' + x.start + ' のご予約をキャンセルします。')) return;
+        c.disabled = true;
+        const res = await api('cancel', { id: x.id });
+        if (res.ok) openMine();
+        else showError('キャンセルできませんでした。');
+      };
+      el.appendChild(c);
+      $('mineList').appendChild(el);
+    });
+  } catch (e) {
+    $('mineList').innerHTML = '';
+    showError(e.message);
+  }
+}
+
+$('toMine').onclick = openMine;
+$('toMine2').onclick = openMine;
+$('toBooking').onclick = () => {
+  show($('mine'), false);
+  show($('done'), false);
+  show($('booking'), true);
+  state.start = null;
+  state.end = null;
+  $('times').innerHTML = '<p class="note" style="padding:0">日付を選んでください。</p>';
+  document.querySelectorAll('.date').forEach(el => el.setAttribute('aria-pressed', 'false'));
+  state.date = null;
+  show($('partyBox'), false);
+  show($('noteBox'), false);
+  updateBar();
+};
+</script>
+</body>
+</html>
