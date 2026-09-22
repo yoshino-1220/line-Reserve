@@ -336,7 +336,7 @@ async function loadSlots() {
   state.start = null;
   state.end = null;
   show($('infoBox'), false);
-  $('times').innerHTML = '<p class="note" style="padding:0">空き状況を確認しています…</p>';
+  $('times').innerHTML = '<p class="note" style="padding:0">空き状況を確認しています…<br>取得に時間がかかる場合があります。</p>';
   updateBar();
 
   const my = ++slotReq;
