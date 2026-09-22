@@ -80,15 +80,7 @@ h2 .opt{font-weight:400;margin-left:4px;font-size:11px}
 .slot[aria-pressed="true"] i{color:#CFDCD4}
 .slot[disabled]{background:#FAF9F7;color:#C3BEB4;border-style:dashed}
 .slot[disabled] i{color:#C3BEB4}
-.hint{font-size:12px;color:var(--ink-soft);margin:-4px 0 12px}
 
-/* --- 人数 --- */
-.party{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-.party button{
-  border:1px solid var(--line);border-radius:var(--radius);padding:9px 0;
-  font-size:15px;font-weight:600;background:#fff;font-variant-numeric:tabular-nums;
-}
-.party button[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:#fff}
 
 /* --- 入力欄 --- */
 .field{margin-bottom:16px}
@@ -142,7 +134,7 @@ textarea{min-height:64px;resize:vertical}
 .cancel{margin-top:10px;font-size:13px;color:var(--danger);text-decoration:underline;text-underline-offset:3px}
 
 @media (prefers-reduced-motion:no-preference){
-  .slot,.date,.party button{transition:background .12s ease,border-color .12s ease}
+  .slot,.date{transition:background .12s ease,border-color .12s ease}
 }
 </style>
 </head>
@@ -161,19 +153,18 @@ textarea{min-height:64px;resize:vertical}
   <!-- 予約画面 -->
   <div id="booking">
     <section>
+      <h2>人数</h2>
+      <div class="dates" id="party"></div>
+    </section>
+
+    <section>
       <h2>ご来店日</h2>
       <div class="month" id="month"></div>
       <div class="dates" id="dates"></div>
     </section>
 
     <section>
-      <h2>人数</h2>
-      <div class="party" id="party"></div>
-    </section>
-
-    <section>
       <h2>ご来店時間</h2>
-      <p class="hint">ご利用時間は1組2時間です。</p>
       <div id="times"><p class="note" style="padding:0">日付を選んでください。</p></div>
     </section>
 
@@ -195,7 +186,7 @@ textarea{min-height:64px;resize:vertical}
     </section>
 
     <div class="bar">
-      <div class="summary" id="summary">日付・人数・時間をお選びください</div>
+      <div class="summary" id="summary">人数・日付・時間をお選びください</div>
       <button class="submit" id="submit" disabled>予約を確定する</button>
     </div>
   </div>
@@ -329,7 +320,7 @@ function renderDates() {
 
 function selectDate(key) {
   clearError();
-  document.querySelectorAll('.date').forEach(el =>
+  document.querySelectorAll('#dates .date').forEach(el =>
     el.setAttribute('aria-pressed', String(el.dataset.key === key)));
   state.date = key;
   $('month').textContent = key.slice(0, 4) + '年' + jpDate(key);
@@ -423,7 +414,9 @@ function renderParty() {
   for (let n = 1; n <= MAX_PARTY; n++) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = n + '名';
+    b.className = 'date';
+    b.innerHTML = '<b>' + n + '</b><i>名</i>';
+    b.setAttribute('aria-label', n + '名');
     b.setAttribute('aria-pressed', String(n === state.party));
     b.onclick = () => {
       if (state.party === n) return;
@@ -576,7 +569,7 @@ $('toBooking').onclick = () => {
   $('month').textContent = '';
   $('memo').value = '';
   $('times').innerHTML = '<p class="note" style="padding:0">日付を選んでください。</p>';
-  document.querySelectorAll('.date').forEach(el => el.setAttribute('aria-pressed', 'false'));
+  document.querySelectorAll('#dates .date').forEach(el => el.setAttribute('aria-pressed', 'false'));
   show($('infoBox'), false);
   updateBar();
 };
