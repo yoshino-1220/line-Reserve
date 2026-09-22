@@ -60,6 +60,8 @@ h2 .opt{font-weight:400;margin-left:4px;font-size:11px}
 .date.sun b{color:var(--danger)}
 .date.sat b{color:#2A5B86}
 .date[aria-pressed="true"] b{color:#fff}
+.date.pn{width:56px;padding:10px 0}
+.date.pn b{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
 .month{font-size:12px;color:var(--ink-soft);margin:-4px 0 8px}
 
 /* --- 時間 --- */
@@ -414,9 +416,8 @@ function renderParty() {
   for (let n = 1; n <= MAX_PARTY; n++) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'date';
-    b.innerHTML = '<b>' + n + '</b><i>名</i>';
-    b.setAttribute('aria-label', n + '名');
+    b.className = 'date pn';
+    b.innerHTML = '<b>' + n + '名</b>';
     b.setAttribute('aria-pressed', String(n === state.party));
     b.onclick = () => {
       if (state.party === n) return;
